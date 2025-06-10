@@ -112,9 +112,21 @@ def point_in_triangle_3d(P, triangle):
         return True
     return False
 
+def point_on_segment_3d(P, seg):
+    A = (seg[0], seg[1], seg[2])
+    B = (seg[3], seg[4], seg[5])
+    AP = vector_subtract(P, A)
+    AB = vector_subtract(B, A)
+    crossAP_AB = cross_product(AP, AB)
+    if abs(crossAP_AB[0]) > 1e-7 or abs(crossAP_AB[1]) > 1e-7 or abs(crossAP_AB[2]) > 1e-7:
+        return False
+    PB = vector_subtract(P, B)
+    dot1 = dot_product(AP, PB)
+    return dot1 <= 1e-7
+
 def intersect_segment_triangle(segment, triangle):
-    p0 = segment[0:3]
-    p1 = segment[3:6]
+    p0 = (segment[0], segment[1], segment[2])
+    p1 = (segment[3], segment[4], segment[5])
     A, B, C = triangle
     plane = make_plane(A, B, C)
     if plane is None:
@@ -123,15 +135,19 @@ def intersect_segment_triangle(segment, triangle):
     
     dir_vec = [p1[i] - p0[i] for i in range(3)]
     denom = a*dir_vec[0] + b*dir_vec[1] + c*dir_vec[2]
+    
     if abs(denom) < 1e-10:
         if classify_point(plane, p0) == "COPLANAR" and point_in_triangle_3d(p0, triangle):
             return True
         if classify_point(plane, p1) == "COPLANAR" and point_in_triangle_3d(p1, triangle):
             return True
+        for Q in triangle:
+            if classify_point(plane, Q) == "COPLANAR" and point_on_segment_3d(Q, segment):
+                return True
         return False
     
     t = -(a*p0[0] + b*p0[1] + c*p0[2] + d) / denom
-    if t < 0 or t > 1:
+    if t < 0.0 or t > 1.0:
         return False
     
     x = p0[0] + t * dir_vec[0]
@@ -197,14 +213,11 @@ def traverse_bsp(segment, node, result_set):
         if intersect_segment_triangle(segment, tri):
             result_set.add(tri_idx)
             
-    p0 = segment[0:3]
-    p1 = segment[3:6]
+    p0 = (segment[0], segment[1], segment[2])
+    p1 = (segment[3], segment[4], segment[5])
     side0 = classify_point(node.plane, p0)
     side1 = classify_point(node.plane, p1)
     
-    if side0 == "COPLANAR" and side1 == "COPLANAR":
-        return
-        
     if side0 in ["POSITIVE", "COPLANAR"] and side1 in ["POSITIVE", "COPLANAR"]:
         traverse_bsp(segment, node.positive_child, result_set)
     elif side0 in ["NEGATIVE", "COPLANAR"] and side1 in ["NEGATIVE", "COPLANAR"]:

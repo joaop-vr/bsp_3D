@@ -4,8 +4,9 @@ import numpy as np
 import sys
 import matplotlib as mpl
 from matplotlib.lines import Line2D
+import os
 
-def plot_input_with_legend(input_file):
+def plot_input_with_legend(input_file, output_dir):
     # Ler o arquivo de entrada
     with open(input_file, 'r') as f:
         data = f.read().split()
@@ -27,7 +28,7 @@ def plot_input_with_legend(input_file):
         points.append((x, y, z))
     
     # Ler triângulos (índices)
-    triangles = []  # cada triângulo é uma tupla de três índices
+    triangles = []
     for i in range(t):
         i1 = int(data[index]); i2 = int(data[index+1]); i3 = int(data[index+2])
         index += 3
@@ -59,7 +60,6 @@ def plot_input_with_legend(input_file):
     
     # Plotar triângulos
     for i, tri in enumerate(triangles):
-        # Obter vértices do triângulo
         verts = [points[idx-1] for idx in tri]
         poly = Poly3DCollection([verts], alpha=0.3)
         poly.set_facecolor('lightblue')
@@ -71,17 +71,16 @@ def plot_input_with_legend(input_file):
         ax.text(centroid[0], centroid[1], centroid[2], f'T{i+1}', fontsize=9, ha='center')
     
     # Gerar paleta de cores para os segmentos
-    colors = plt.cm.tab10(np.linspace(0, 1, min(l, 10)))  # Tab10 para até 10 segmentos
+    colors = plt.cm.tab10(np.linspace(0, 1, min(l, 10)))
     if l > 10:
-        colors = plt.cm.tab20(np.linspace(0, 1, l))  # Tab20 para mais de 10 segmentos
+        colors = plt.cm.tab20(np.linspace(0, 1, l))
     
-    # Plotar segmentos com cores distintas
+    # Plotar segmentos
     for i, seg in enumerate(segments):
         x = [seg[0], seg[3]]
         y = [seg[1], seg[4]]
         z = [seg[2], seg[5]]
         
-        # Usar cor da paleta
         color = colors[i % len(colors)]
         ax.plot(x, y, z, color=color, linewidth=2.5, marker='o', markersize=6, 
                 label=f'S{i+1}')
@@ -93,39 +92,37 @@ def plot_input_with_legend(input_file):
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2'))
     
     # Criar legenda personalizada
-    legend_elements = []
+    legend_elements = [
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='black', 
+               markersize=8, label='Pontos'),
+        mpl.patches.Patch(facecolor='lightblue', edgecolor='black',
+                          alpha=0.3, label='Triângulos')
+    ]
     
-    # Elemento para pontos
-    legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor='black', 
-                                  markersize=8, label='Pontos'))
-    
-    # Elemento para triângulos
-    legend_elements.append(mpl.patches.Patch(facecolor='lightblue', edgecolor='black',
-                                            alpha=0.3, label='Triângulos'))
-    
-    # Elementos para segmentos
     for i in range(l):
         color = colors[i % len(colors)]
-        legend_elements.append(Line2D([0], [0], color=color, lw=2, 
-                                     label=f'S{i+1} ({segments[i][0]},{segments[i][1]},{segments[i][2]})→({segments[i][3]},{segments[i][4]},{segments[i][5]})'))
+        label = f'S{i+1} ({segments[i][0]},{segments[i][1]},{segments[i][2]})→({segments[i][3]},{segments[i][4]},{segments[i][5]})'
+        legend_elements.append(Line2D([0], [0], color=color, lw=2, label=label))
     
-    # Configurar a legenda
     ax.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(1.05, 1), 
               title="Legenda", fontsize=10, title_fontsize=12)
     
-    # Ajustar layout
-    plt.tight_layout(rect=[0, 0, 0.85, 1])  # Deixar espaço para a legenda
-    plt.subplots_adjust(right=0.8)  # Ajustar para a legenda não cortar
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    plt.subplots_adjust(right=0.8)
+
+    # Gerar nome do arquivo de saída limpo
+    base_name = os.path.splitext(os.path.basename(input_file))[0]
+    output_path = os.path.join(output_dir, f"{base_name}_plot.png")
     
-    # Salvar e mostrar
-    plt.savefig(f"{input_file}_plot.png", dpi=150, bbox_inches='tight')
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
     plt.show()
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Uso: python plot_all_segments.py <input_file>")
-        print("Exemplo: python plot_all_segments.py entrada.txt")
+    if len(sys.argv) < 3:
+        print("Uso: python3 plot.py <input_file> <output_dir>")
+        print("Exemplo: python3 plot.py entrada.txt saida/")
         sys.exit(1)
     
     input_file = sys.argv[1]
-    plot_input_with_legend(input_file)
+    output_dir = sys.argv[2]
+    plot_input_with_legend(input_file, output_dir)
