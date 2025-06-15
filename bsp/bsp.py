@@ -15,10 +15,12 @@ def make_plane(p0, p1, p2):
     v1 = vector_subtract(p1, p0)
     v2 = vector_subtract(p2, p0)
     normal = cross_product(v1, v2)
+    if all(abs(coord) < 1e-10 for coord in normal):  # Triângulo degenerado
+        return None
     d = -dot_product(normal, p0)
     return (normal[0], normal[1], normal[2], d)
 
-def classify_point(plane, point, tol=1e-7):
+def classify_point(plane, point, tol=1e-10):
     a, b, c, d = plane
     x, y, z = point
     value = a*x + b*y + c*z + d
@@ -74,13 +76,21 @@ def split_triangle(triangle, plane):
         N1, N2 = negative_pts
         I1 = intersect_edge_plane(P, N1, plane)
         I2 = intersect_edge_plane(P, N2, plane)
-        return [[P, I1, I2], [N1, I1, I2], [I1, N2, I2]]
+        return [
+            [P, I1, I2],      # Triângulo positivo
+            [N1, I1, I2],     # Triângulo negativo 1
+            [N1, I2, N2]      # Triângulo negativo 2 (conectado a N1)
+        ]
     elif len(positive_pts) == 2 and len(negative_pts) == 1:
         N = negative_pts[0]
         P1, P2 = positive_pts
         I1 = intersect_edge_plane(N, P1, plane)
         I2 = intersect_edge_plane(N, P2, plane)
-        return [[N, I1, I2], [I1, P1, I2], [I1, I2, P2]]
+        return [
+            [N, I1, I2],       # Triângulo negativo
+            [I1, P1, I2],      # Triângulo positivo 1
+            [I1, I2, P2]       # Triângulo positivo 2
+        ]
     elif len(positive_pts) == 1 and len(negative_pts) == 1 and len(coplanar_pts) == 1:
         P = positive_pts[0]
         N = negative_pts[0]
@@ -118,11 +128,11 @@ def point_on_segment_3d(P, seg):
     AP = vector_subtract(P, A)
     AB = vector_subtract(B, A)
     crossAP_AB = cross_product(AP, AB)
-    if abs(crossAP_AB[0]) > 1e-7 or abs(crossAP_AB[1]) > 1e-7 or abs(crossAP_AB[2]) > 1e-7:
+    if abs(crossAP_AB[0]) > 1e-10 or abs(crossAP_AB[1]) > 1e-10 or abs(crossAP_AB[2]) > 1e-10:
         return False
     PB = vector_subtract(P, B)
     dot1 = dot_product(AP, PB)
-    return dot1 <= 1e-7
+    return dot1 <= 1e-10
 
 def intersect_segment_triangle(segment, triangle):
     p0 = (segment[0], segment[1], segment[2])

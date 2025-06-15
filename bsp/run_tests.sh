@@ -3,7 +3,7 @@
 # Este script procura todos os arquivos “*.in” no diretório atual e
 # executa o programa “bsp.py” em cada um, redirecionando a saída
 # para um arquivo “*.out” com o mesmo nome-base.
-# Em seguida, executa o plot_bsp.py para gerar uma visualização da entrada.
+# Em seguida, executa o plot.py para gerar uma visualização da entrada.
 #
 # Uso:
 #   chmod +x run_all.sh
@@ -16,9 +16,9 @@ if [[ ! -f "bsp.py" ]]; then
   exit 1
 fi
 
-# Verifica se o plot_bsp.py existe
-if [[ ! -f "plot_bsp.py" ]]; then
-  echo "Erro: não foi encontrado 'plot_bsp.py' neste diretório."
+# Verifica se o plot.py existe
+if [[ ! -f "plot.py" ]]; then
+  echo "Erro: não foi encontrado 'plot.py' neste diretório."
   exit 1
 fi
 
@@ -42,9 +42,9 @@ for f in testes/inputs/*.in; do
     continue
   fi
 
-  # Geração de imagem com plot_bsp.py
-  echo "Gerando imagem com plot_bsp.py para '$f'..."
-  python3 plot_bsp.py "$f" "testes/outputs/"
+  # Geração de imagem com plot.py
+  echo "Gerando imagem com plot.py para '$f'..."
+  python3 plot.py "$f" "testes/outputs/"
 
   if [[ $? -ne 0 ]]; then
     echo "  [Erro] ao gerar imagem para '$f'."
