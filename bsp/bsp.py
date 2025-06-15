@@ -15,7 +15,7 @@ def make_plane(p0, p1, p2):
     v1 = vector_subtract(p1, p0)
     v2 = vector_subtract(p2, p0)
     normal = cross_product(v1, v2)
-    if all(abs(coord) < 1e-10 for coord in normal):  # Triângulo degenerado
+    if all(abs(coord) < 1e-10 for coord in normal):
         return None
     d = -dot_product(normal, p0)
     return (normal[0], normal[1], normal[2], d)
@@ -77,9 +77,9 @@ def split_triangle(triangle, plane):
         I1 = intersect_edge_plane(P, N1, plane)
         I2 = intersect_edge_plane(P, N2, plane)
         return [
-            [P, I1, I2],      # Triângulo positivo
-            [N1, I1, I2],     # Triângulo negativo 1
-            [N1, I2, N2]      # Triângulo negativo 2 (conectado a N1)
+            [P, I1, I2],
+            [N1, I1, I2],
+            [N1, I2, N2]
         ]
     elif len(positive_pts) == 2 and len(negative_pts) == 1:
         N = negative_pts[0]
@@ -87,9 +87,9 @@ def split_triangle(triangle, plane):
         I1 = intersect_edge_plane(N, P1, plane)
         I2 = intersect_edge_plane(N, P2, plane)
         return [
-            [N, I1, I2],       # Triângulo negativo
-            [I1, P1, I2],      # Triângulo positivo 1
-            [I1, I2, P2]       # Triângulo positivo 2
+            [N, I1, I2],
+            [I1, P1, I2],
+            [I1, I2, P2]
         ]
     elif len(positive_pts) == 1 and len(negative_pts) == 1 and len(coplanar_pts) == 1:
         P = positive_pts[0]
@@ -134,6 +134,36 @@ def point_on_segment_3d(P, seg):
     dot1 = dot_product(AP, PB)
     return dot1 <= 1e-10
 
+def segments_intersect_2d(s1_p1, s1_p2, s2_p1, s2_p2):
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    
+    def sign(x):
+        return 1 if x > 1e-10 else -1 if x < -1e-10 else 0
+        
+    def on_segment(a, b, c):
+        return (min(a[0], b[0]) <= c[0] <= max(a[0], b[0]) and 
+                min(a[1], b[1]) <= c[1] <= max(a[1], b[1]))
+    
+    d1 = cross(s1_p1, s1_p2, s2_p1)
+    d2 = cross(s1_p1, s1_p2, s2_p2)
+    d3 = cross(s2_p1, s2_p2, s1_p1)
+    d4 = cross(s2_p1, s2_p2, s1_p2)
+    
+    if sign(d1) * sign(d2) < 0 and sign(d3) * sign(d4) < 0:
+        return True
+        
+    if abs(d1) < 1e-10 and on_segment(s1_p1, s1_p2, s2_p1):
+        return True
+    if abs(d2) < 1e-10 and on_segment(s1_p1, s1_p2, s2_p2):
+        return True
+    if abs(d3) < 1e-10 and on_segment(s2_p1, s2_p2, s1_p1):
+        return True
+    if abs(d4) < 1e-10 and on_segment(s2_p1, s2_p2, s1_p2):
+        return True
+        
+    return False
+
 def intersect_segment_triangle(segment, triangle):
     p0 = (segment[0], segment[1], segment[2])
     p1 = (segment[3], segment[4], segment[5])
@@ -147,15 +177,51 @@ def intersect_segment_triangle(segment, triangle):
     denom = a*dir_vec[0] + b*dir_vec[1] + c*dir_vec[2]
     
     if abs(denom) < 1e-10:
-        if classify_point(plane, p0) == "COPLANAR" and point_in_triangle_3d(p0, triangle):
+        # Segmento paralelo ao plano
+        coplanar0 = classify_point(plane, p0) == "COPLANAR"
+        coplanar1 = classify_point(plane, p1) == "COPLANAR"
+        
+        # Verifica pontos finais dentro do triângulo
+        if coplanar0 and point_in_triangle_3d(p0, triangle):
             return True
-        if classify_point(plane, p1) == "COPLANAR" and point_in_triangle_3d(p1, triangle):
+        if coplanar1 and point_in_triangle_3d(p1, triangle):
             return True
+            
+        # Verifica vértices do triângulo no segmento
         for Q in triangle:
-            if classify_point(plane, Q) == "COPLANAR" and point_on_segment_3d(Q, segment):
+            if point_on_segment_3d(Q, segment):
                 return True
+        
+        # Só faz projeção se o segmento estiver no plano
+        if coplanar0 and coplanar1:
+            normal = plane[:3]
+            abs_normal = [abs(normal[0]), abs(normal[1]), abs(normal[2])]
+            axis = abs_normal.index(max(abs_normal))
+            
+            def project(pt):
+                if axis == 0:  # Ignora X
+                    return (pt[1], pt[2])
+                elif axis == 1:  # Ignora Y
+                    return (pt[0], pt[2])
+                else:  # Ignora Z
+                    return (pt[0], pt[1])
+                    
+            seg_proj = [project(p0), project(p1)]
+            tri_proj = [project(A), project(B), project(C)]
+            
+            edges = [
+                (tri_proj[0], tri_proj[1]),
+                (tri_proj[1], tri_proj[2]),
+                (tri_proj[2], tri_proj[0])
+            ]
+            
+            for edge in edges:
+                if segments_intersect_2d(seg_proj[0], seg_proj[1], edge[0], edge[1]):
+                    return True
+                    
         return False
     
+    # Caso não paralelo
     t = -(a*p0[0] + b*p0[1] + c*p0[2] + d) / denom
     if t < 0.0 or t > 1.0:
         return False
