@@ -115,7 +115,7 @@ def plot_input_with_legend(input_file, output_dir):
     output_path = os.path.join(output_dir, f"{base_name}_plot.png")
     
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
-    #plt.show()
+    plt.show()
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
