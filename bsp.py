@@ -30,7 +30,7 @@ def vector_subtract(u, v):
 
 def make_plane(p0, p1, p2):
     """
-    Cria a representação de um plano em 3D a partir de três pontos.
+    Cria a representação de um plano a partir de três pontos.
 
     Parâmetros:
     p0, p1, p2: Pontos no espaço (x, y, z) definindo o plano.
@@ -41,7 +41,7 @@ def make_plane(p0, p1, p2):
     # Vetores no plano a partir de p0
     v1 = vector_subtract(p1, p0)
     v2 = vector_subtract(p2, p0)
-    # Normal do plano
+    
     normal = cross_product(v1, v2)
     # Se a normal for (quase) zero, os pontos são colineares
     if all(abs(coord) < 1e-10 for coord in normal):
@@ -114,10 +114,10 @@ def intersect_edge_plane(p, q, plane):
     a, b, c, d = plane
     num = -(a*p[0] + b*p[1] + c*p[2] + d)
     denom = a*(q[0]-p[0]) + b*(q[1]-p[1]) + c*(q[2]-p[2])
-    # Se denom próximo de 0, considere paralelo e retorne p
+    # Se denom próximo de 0, considere paralelo e retorna p
     if abs(denom) < 1e-10:
         return p
-    # Parâmetro t da interseção ao longo de p->q
+    # Parâmetro t da interseção ao longo do seg pq
     t = num / denom
     # Calcula coordenadas do ponto de interseção
     x = p[0] + t*(q[0]-p[0])
@@ -150,21 +150,18 @@ def split_triangle(triangle, plane):
         else:
             coplanar_pts.append(pts[i])
     
-    # Caso de termos 1 ponto positivo, 2 negativos
     if len(positive_pts) == 1 and len(negative_pts) == 2:
         P = positive_pts[0]
         N1, N2 = negative_pts
         I1 = intersect_edge_plane(P, N1, plane)
         I2 = intersect_edge_plane(P, N2, plane)
         return [[P, I1, I2],[N1, I1, I2],[N1, I2, N2]]
-    # Caso de termos 2 pontos positivos, 1 negativo
     elif len(positive_pts) == 2 and len(negative_pts) == 1:
         N = negative_pts[0]
         P1, P2 = positive_pts
         I1 = intersect_edge_plane(N, P1, plane)
         I2 = intersect_edge_plane(N, P2, plane)
         return [[N, I1, I2],[I1, P1, I2],[I1, I2, P2]]
-    # Caso de termos 1 positivo, 1 negativo, 1 coplanar
     elif len(positive_pts) == 1 and len(negative_pts) == 1 and len(coplanar_pts) == 1:
         P = positive_pts[0]
         N = negative_pts[0]
@@ -177,11 +174,11 @@ def split_triangle(triangle, plane):
 
 def point_in_triangle(P, triangle):
     """
-    Verifica se um ponto P está dentro de um triângulo em 3D.
+    Verifica se um ponto P está dentro de um triângulo.
 
     Parâmetros:
     P: Ponto a testar (x, y, z).
-    triangle : Vértices do triângulo [(x1,y1,z1), ...].
+    triangle : Vértices do triângulo.
 
     Retorna: True se P estiver dentro (ou no limite) do triângulo; False caso contrário.
     """
@@ -196,12 +193,10 @@ def point_in_triangle(P, triangle):
     PB = vector_subtract(B, P)
     PC = vector_subtract(C, P)
     
-    # Normais de sub-triângulos P-BC, P-CA, P-AB
     n1 = cross_product(PB, PC)
     n2 = cross_product(PC, PA)
     n3 = cross_product(PA, PB)
     
-    # Produto escalar para verificar mesmo lado da normal principal
     d1 = dot_product(n1, n)
     d2 = dot_product(n2, n)
     d3 = dot_product(n3, n)
@@ -213,7 +208,7 @@ def point_in_triangle(P, triangle):
 
 def point_on_segment(P, seg):
     """
-    Verifica se um ponto P está sobre um segmento de reta 3D.
+    Verifica se um ponto P está sobre um segmento de reta.
     Retorna:
     bool: True se P estiver colinear e entre A e B, False caso contrário.
     """
@@ -262,11 +257,11 @@ def segments_intersect_2d(s1_p1, s1_p2, s2_p1, s2_p2):
 
 def intersect_segment_triangle(segment, triangle):
     """
-    Verifica se um segmento 3D intersecta um triângulo.
+    Verifica se um segmento intersecta um triângulo.
 
     Parâmetros:
     segment: Coordenadas (x1,y1,z1,x2,y2,z2) do segmento.
-    triangle: Vértices do triângulo [(x,y,z),...].
+    triangle: Vértices do triângulo.
 
     Retorna: True se houver interseção, False caso contrário.
     """
@@ -304,11 +299,11 @@ def intersect_segment_triangle(segment, triangle):
             axis = abs_normal.index(max(abs_normal))
             
             def project(pt):
-                if axis == 0:  # Ignora X
+                if axis == 0:
                     return (pt[1], pt[2])
-                elif axis == 1:  # Ignora Y
+                elif axis == 1:
                     return (pt[0], pt[2])
-                else:  # Ignora Z
+                else:
                     return (pt[0], pt[1])
                     
             seg_proj = [project(p0), project(p1)]
