@@ -1,4 +1,4 @@
-# mplementação de BSP Tree para Detecção de Interseções 3D
+# Implementação de BSP Tree para Detecção de Interseções 3D
 
 Este documento fornece uma visão geral dos arquivos e instruções de uso do repositório **bsp_3D**.
 
